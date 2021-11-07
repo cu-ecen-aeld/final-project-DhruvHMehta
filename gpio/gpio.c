@@ -8,8 +8,8 @@
  *
  ********************************************************/
 
-#include <gpiod.h>
 #include <stdio.h>
+#include <gpiod.h>
 
 #define GPIO_PIN    4
 
