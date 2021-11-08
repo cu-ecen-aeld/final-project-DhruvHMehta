@@ -1,2 +1,3 @@
 *.o
-gpiotest
+gpioreadtest
+gpiowritetest

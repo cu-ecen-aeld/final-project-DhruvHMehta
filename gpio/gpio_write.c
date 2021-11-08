@@ -1,11 +1,7 @@
 /*********************************************************
  *
- *  Gpio.c - Test file to check working of lgpiod lib
+ *  Gpio_write.c - Test file to check working of lgpiod lib
  *  
- *  Reference - https://ostconf.com/system/attachments/
- *  files/000/001/532/original/
- *  Linux_Piter_2018_-_New_GPIO_interface_for_linux_userspace.pdf?1541021776
- *
  ********************************************************/
 
 #include <stdio.h>
@@ -32,7 +28,7 @@ int main()
      return -1; 
     }
 
-    rv = gpiod_line_request_input(line, "foobar");
+    rv = gpiod_line_request_output(line, "foobar", 1);
 
     if (rv) 
     {
@@ -40,8 +36,8 @@ int main()
      return -1;
     }
 
-    value = gpiod_line_get_value(line);
-    printf("GPIO%d value is %d", GPIO_PIN, value);
+    value = gpiod_line_set_value(line, 0);
+    printf("GPIO%d value is cleared to 0\n", GPIO_PIN);
     gpiod_chip_close(chip);
 
     return 0;

@@ -12,14 +12,21 @@ ifeq ($(LDFLAGS),)
 	LDFLAGS= -lgpiod
 endif
 
-all: gpiotest
-default: gpiotest
+all: gpioreadtest gpiowritetest
+default: gpioreadtest gpiowritetest
 
-gpiotest : gpio.o
-	$(CROSS_COMPILE)$(CC) $(CFLAGS) -o gpiotest gpio.o $(LDFLAGS)
+gpioreadtest : gpio_read.o
+	$(CROSS_COMPILE)$(CC) $(CFLAGS) -o gpioreadtest gpio_read.o $(LDFLAGS)
 
-gpio.o : gpio.c
-	$(CROSS_COMPILE)$(CC) $(CFLAGS) -c gpio.c $(LDFLAGS)
+gpiowritetest : gpio_write.o
+	$(CROSS_COMPILE)$(CC) $(CFLAGS) -o gpiowritetest gpio_write.o $(LDFLAGS)
+
+gpio_read.o : gpio_read.c
+	$(CROSS_COMPILE)$(CC) $(CFLAGS) -c gpio_read.c $(LDFLAGS)
+
+gpio_write.o : gpio_write.c
+	$(CROSS_COMPILE)$(CC) $(CFLAGS) -c gpio_write.c $(LDFLAGS)
+
 
 clean :
-	rm -f gpiotest *.o
+	rm -f gpioreadtest gpiowritetest *.o
