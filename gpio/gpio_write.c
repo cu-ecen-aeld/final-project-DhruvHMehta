@@ -6,6 +6,7 @@
 
 #include <stdio.h>
 #include <gpiod.h>
+#include <unistd.h>
 
 #define GPIO_PIN    4
 
@@ -38,6 +39,7 @@ int main()
 
     value = gpiod_line_set_value(line, 0);
     printf("GPIO%d value is cleared to 0\n", GPIO_PIN);
+    sleep(1);
     gpiod_chip_close(chip);
 
     return 0;
