@@ -55,20 +55,27 @@ int main()
        return -1;
    }
 
+   sleep(1);
+
     while(1)
     {
-        gpiod_line_set_value(trigger, 1);
+        rv = gpiod_line_set_value(trigger, 1);
+        if(rv != 0)
+            printf("gpiod_line_set_value->1 failed");
+
         usleep(10);
 
-        gpiod_line_set_value(trigger, 0);
+        rv = gpiod_line_set_value(trigger, 0);
+        if(rv != 0)
+            printf("gpiod_line_set_value->0 failed");
 
         wait_time.tv_sec  = 0;
         wait_time.tv_nsec = 50000000;
 
-        rv = gpiod_line_event_wait(echo, &wait_time);
+        rv = gpiod_line_event_wait(echo, NULL);
         if(rv != 1)
         {
-            perror("gpiod_line_event_wait");
+            printf("gpiod_line_event_wait");
             gpiod_chip_close(chip);
             return -1;
         }
@@ -80,7 +87,7 @@ int main()
         rv = gpiod_line_event_wait(echo, &wait_time);
         if(rv != 1)
         {
-            perror("gpiod_line_event_wait");
+            printf("gpiod_line_event_wait");
             gpiod_chip_close(chip);
             return -1;
         }
