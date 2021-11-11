@@ -41,6 +41,11 @@ int main()
        return -1;
    }
 
+   rv = gpiod_line_set_value(trigger, 0);
+   if(rv != 0)
+       printf("gpiod_line_set_value->1 failed");
+
+
    rv = gpiod_line_request_input(echo, "ultrasonic");
    if(rv != 0)
    {
