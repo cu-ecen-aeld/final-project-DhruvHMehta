@@ -1,3 +1,6 @@
+/* References: https://olegkutkov.me/2017/08/10/mlx90614-raspberry/
+ * Modified by : Rishab Shah
+ */
 #include <sys/ioctl.h>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -7,10 +10,17 @@
 #include <string.h>
 #include <linux/i2c-dev.h>
 #include <linux/i2c.h>
-///
-#define I2C_DEV_PATH "/dev/i2c-1"
 
-/* Just in case */
+/* Macros */
+#define MLX90614_TA 			(0x06)
+#define MLX90614_TOBJ1 			(0x07)
+#define MLX90614_TOBJ2 			(0x08)
+#define TEMPERATURE_TYPE 		(MLX90614_TOBJ1)
+
+#define MLX90614_DEVICE_ADDRESS		(0x5A)
+#define I2C_DEV_PATH 			("/dev/i2c-1")
+
+/* Just in case if these were not defined */
 #ifndef I2C_SMBUS_READ 
 #define I2C_SMBUS_READ 1 
 #endif 
@@ -19,6 +29,7 @@
 #endif
 
 typedef union i2c_smbus_data i2c_data;
+
 int main()
 {
     int fdev = open(I2C_DEV_PATH, O_RDWR); // open i2c bus
@@ -27,10 +38,9 @@ int main()
         fprintf(stderr, "Failed to open I2C interface %s Error: %s\n", I2C_DEV_PATH, strerror(errno));
         return -1;
     }
-
-    unsigned char i2c_addr = 0x5A;
-
+    
     // set slave device address, default MLX is 0x5A
+    unsigned char i2c_addr = MLX90614_DEVICE_ADDRESS;
     if (ioctl(fdev, I2C_SLAVE, i2c_addr) < 0) {
         fprintf(stderr, "Failed to select I2C slave device! Error: %s\n", strerror(errno));
         return -1;
@@ -42,11 +52,9 @@ int main()
         return -1;
     }
 
-
-    // trying to read something from the device unsing SMBus READ request
+    // trying to read something from the device using SMBus READ request
     i2c_data data;
-    char command = 0x06; // command 0x06 is reading thermopile sensor, see datasheet for all commands
-
+    char command = TEMPERATURE_TYPE; 
     // build request structure
     struct i2c_smbus_ioctl_data sdat = {
         .read_write = I2C_SMBUS_READ,
@@ -67,7 +75,7 @@ int main()
     temp = temp - 273.15;
 
     // print result
-    printf("Tamb = %04.2f\n", temp);
+    printf("Temperature of the object = %04.2f\n", temp);
 
     return 0;
 }
