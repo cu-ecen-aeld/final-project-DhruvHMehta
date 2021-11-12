@@ -75,7 +75,7 @@ int main()
     temp = temp - 273.15;
 
     // print result
-    printf("Temperature of the object = %04.2f\n", temp);
+    printf("Temperature value read from object = %04.2f\n", temp);
 
     return 0;
 }
