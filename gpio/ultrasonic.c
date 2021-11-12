@@ -22,7 +22,8 @@ int main()
 
    trigger = gpiod_chip_get_line(chip, TRIG);
    if(trigger == NULL)
-   { 
+   {
+       syslog(LOG_CRIT, "Trig get line failed");
        gpiod_chip_close(chip);
        return -1;
    }
@@ -30,13 +31,15 @@ int main()
    echo = gpiod_chip_get_line(chip, ECHO);
    if(echo == NULL)
    {
+       syslog(LOG_CRIT, "echo get line failed");
        gpiod_chip_close(chip);
        return -1;
    }
     
-   rv = gpiod_line_request_output(trigger, "ultrasonic", 0);
+   rv = gpiod_line_request_output(trigger, "ultrasonic_trig", 0);
    if(rv != 0)
    {
+       syslog(LOG_CRIT, "Trig request get output failed");
        gpiod_chip_close(chip);
        return -1;
    }
@@ -49,16 +52,18 @@ int main()
 
    syslog(LOG_CRIT, "Set 0 at trigger");
     
-   rv = gpiod_line_request_input(echo, "ultrasonic");
+   rv = gpiod_line_request_input(echo, "ultrasonic_echo");
    if(rv != 0)
-   {
+   { 
+       syslog(LOG_CRIT, "Echo request input failed");
        gpiod_chip_close(chip);
        return -1;
    }
 
-   rv = gpiod_line_request_both_edges_events(echo, "ultrasonic");
+   rv = gpiod_line_request_both_edges_events(echo, "ultrasonic_echo");
    if(rv != 0)
    {
+       syslog(LOG_CRIT, "Request both edges failed");
        gpiod_chip_close(chip);
        return -1;
    }
