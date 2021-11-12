@@ -2,6 +2,8 @@
 #include <time.h>
 #include <unistd.h>
 #include <syslog.h>
+#include <errno.h>
+#include <string.h>
 
 #define GPIOCHIP0   "/dev/gpiochip0"
 #define TRIG        5
@@ -23,7 +25,7 @@ int main()
    trigger = gpiod_chip_get_line(chip, TRIG);
    if(trigger == NULL)
    {
-       syslog(LOG_CRIT, "Trig get line failed");
+       syslog(LOG_CRIT, "Trig get line failed, errno = %s", strerror(errno));
        gpiod_chip_close(chip);
        return -1;
    }
@@ -31,7 +33,7 @@ int main()
    echo = gpiod_chip_get_line(chip, ECHO);
    if(echo == NULL)
    {
-       syslog(LOG_CRIT, "echo get line failed");
+       syslog(LOG_CRIT, "echo get line failed, errno = %s", strerror(errno));
        gpiod_chip_close(chip);
        return -1;
    }
@@ -39,7 +41,7 @@ int main()
    rv = gpiod_line_request_output(trigger, "ultrasonic_trig", 0);
    if(rv != 0)
    {
-       syslog(LOG_CRIT, "Trig request get output failed");
+       syslog(LOG_CRIT, "Trig request get output failed, errno = %s", strerror(errno));
        gpiod_chip_close(chip);
        return -1;
    }
@@ -55,7 +57,7 @@ int main()
    rv = gpiod_line_request_input(echo, "ultrasonic_echo");
    if(rv != 0)
    { 
-       syslog(LOG_CRIT, "Echo request input failed");
+       syslog(LOG_CRIT, "Echo request input failed, errno = %s", strerror(errno));
        gpiod_chip_close(chip);
        return -1;
    }
@@ -63,7 +65,7 @@ int main()
    rv = gpiod_line_request_both_edges_events(echo, "ultrasonic_echo");
    if(rv != 0)
    {
-       syslog(LOG_CRIT, "Request both edges failed");
+       syslog(LOG_CRIT, "Request both edges failed, errno = %s", strerror(errno));
        gpiod_chip_close(chip);
        return -1;
    }
@@ -75,13 +77,13 @@ int main()
     {
         rv = gpiod_line_set_value(trigger, 1);
         if(rv != 0)
-            syslog(LOG_CRIT,"gpiod_line_set_value->1 failed");
+            syslog(LOG_CRIT,"gpiod_line_set_value->1 failed, errno = %s", strerror(errno));
 
         usleep(10);
 
         rv = gpiod_line_set_value(trigger, 0);
         if(rv != 0)
-            syslog(LOG_CRIT,"gpiod_line_set_value->0 failed");
+            syslog(LOG_CRIT,"gpiod_line_set_value->0 failed, errno = %s", strerror(errno));
 
         wait_time.tv_sec  = 0;
         wait_time.tv_nsec = 50000000;
@@ -89,7 +91,7 @@ int main()
         rv = gpiod_line_event_wait(echo, NULL);
         if(rv != 1)
         {
-            syslog(LOG_CRIT,"gpiod_line_event_wait");
+            syslog(LOG_CRIT,"gpiod_line_event_wait, errno = %s", strerror(errno));
             gpiod_chip_close(chip);
             return -1;
         }
@@ -101,7 +103,7 @@ int main()
         rv = gpiod_line_event_wait(echo, &wait_time);
         if(rv != 1)
         {
-            syslog(LOG_CRIT,"gpiod_line_event_wait");
+            syslog(LOG_CRIT,"gpiod_line_event_wait, errno = %s", strerror(errno));
             gpiod_chip_close(chip);
             return -1;
         }
