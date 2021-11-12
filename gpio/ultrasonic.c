@@ -54,6 +54,7 @@ int main()
 
    syslog(LOG_CRIT, "Set 0 at trigger");
     
+ /*
    rv = gpiod_line_request_input(echo, "ultrasonic_echo");
    if(rv != 0)
    { 
@@ -61,7 +62,7 @@ int main()
        gpiod_chip_close(chip);
        return -1;
    }
-
+*/
    rv = gpiod_line_request_both_edges_events(echo, "ultrasonic_echo");
    if(rv != 0)
    {
