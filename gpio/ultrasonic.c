@@ -116,6 +116,8 @@ int main()
         if(rv != 0)
             syslog(LOG_CRIT,"gpiod_line_set_value->0 failed, errno = %s", strerror(errno));
 
+        /* Wait for lines to stabilize for atleast 100uS */
+        usleep(100);
         /* Wait for 50mS, if the echo didn't arrive, the waves did not reflect back */
         wait_time.tv_sec  = 0;
         wait_time.tv_nsec = 50000000;
@@ -149,9 +151,10 @@ int main()
 
         syslog(LOG_CRIT, "End time = %ldsec and %ldnsec", end_time.tv_sec, end_time.tv_nsec);
         
-        /* Distance between object and sensor is calculated using d = v*(Tend - Tstart)/2 */
+        /* Distance between object and sensor is calculated using d = v*(Tend - Tstart)/2
+         * Convert nsec to s -> 10^-9 and convert m to cm 10^2 -> Final division -> 10^-7*/
         syslog(LOG_CRIT, "Time difference = %ld\n", end_time.tv_nsec - start_time.tv_nsec);
-        syslog(LOG_CRIT, "Distance = %ld\n", V_SOUND*((end_time.tv_nsec - start_time.tv_nsec)*1000000000)/2);
+        syslog(LOG_CRIT, "Distance = %ld\ncm", (V_SOUND*(end_time.tv_nsec - start_time.tv_nsec)/10000000)/2);
 
         /* Wait a second before next measurement */
         sleep(1);        
