@@ -10,6 +10,7 @@
 #include <string.h>
 #include <linux/i2c-dev.h>
 #include <linux/i2c.h>
+#include <unistd.h>
 
 /* Macros */
 #define MLX90614_TA 			(0x06)
@@ -19,6 +20,8 @@
 
 #define MLX90614_DEVICE_ADDRESS		(0x5A)
 #define I2C_DEV_PATH 			("/dev/i2c-1")
+
+#define SLEEP_DURATION 			(1000000)
 
 /* Just in case if these were not defined */
 #ifndef I2C_SMBUS_READ 
@@ -32,6 +35,9 @@ typedef union i2c_smbus_data i2c_data;
 
 int main()
 {
+    while(1)
+    {
+
     int fdev = open(I2C_DEV_PATH, O_RDWR); // open i2c bus
 
     if (fdev < 0) {
@@ -76,6 +82,9 @@ int main()
 
     // print result
     printf("Temperature value read from object = %04.2f\n", temp);
+
+    usleep(SLEEP_DURATION);
+    }
 
     return 0;
 }
