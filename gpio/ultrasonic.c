@@ -151,7 +151,8 @@ int main()
             syslog(LOG_CRIT,"Something went wrong in clock_gettime\n");
 
         /* Distance between object and sensor is calculated using d = v*t/2 */
-        syslog(LOG_CRIT, "Distance = %ld\n", V_SOUND*((end_time.tv_nsec)*1000000000)/2);
+        syslog(LOG_CRIT, "Time difference = %ld\n", end_time.tv_nsec - start_time.tv_nsec);
+        syslog(LOG_CRIT, "Distance = %ld\n", V_SOUND*((end_time.tv_nsec - start_time.tv_nsec)*1000000000)/2);
 
         /* Wait a second before next measurement */
         sleep(1);        
