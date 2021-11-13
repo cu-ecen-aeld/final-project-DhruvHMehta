@@ -104,7 +104,11 @@ int main()
         if(rv != 0)
             syslog(LOG_CRIT,"gpiod_line_set_value->1 failed, errno = %s", strerror(errno));
 
-        /* For some reason this sleeps for 100uS */
+        /* For some reason, this sleeps for 100uS
+         * https://www.iot-programmer.com/index.php/books/22-raspberry-pi-and-the-iot-in-c/
+         * chapters-raspberry-pi-and-the-iot-in-c/35-raspberry-pi-iot-in-c-introduction-to-the-gpio?start=3
+         *
+         * Scheduler might be taking 74uS to switch contexts? */
         usleep(10);
 
         /* End of trigger pulse */
@@ -123,19 +127,12 @@ int main()
         }
         while(rv <= 0);
 
-        // redundant
-        if(rv != 1)
-        {
-            syslog(LOG_CRIT,"gpiod_line_event_wait, errno = %s", strerror(errno));
-            gpiod_chip_close(chip);
-            return -1;
-        }
-
         /* Mark the time when the echo pin went high */
         rv = clock_gettime(CLOCK_MONOTONIC, &start_time);
         if(rv != 0)
             syslog(LOG_CRIT,"Something went wrong in clock_gettime\n");
 
+        syslog(LOG_CRIT, "Start time = %ldsec and %ldnsec", start_time.tv_sec, start_time.tv_nsec);
         /* Wait for the echo pin to go low. Don't wait beyond 50mS as it is not possible beyond 3m */
         rv = gpiod_line_event_wait(echo, &wait_time);
         if(rv != 1)
@@ -150,7 +147,9 @@ int main()
         if(rv != 0)
             syslog(LOG_CRIT,"Something went wrong in clock_gettime\n");
 
-        /* Distance between object and sensor is calculated using d = v*t/2 */
+        syslog(LOG_CRIT, "End time = %ldsec and %ldnsec", end_time.tv_sec, end_time.tv_nsec);
+        
+        /* Distance between object and sensor is calculated using d = v*(Tend - Tstart)/2 */
         syslog(LOG_CRIT, "Time difference = %ld\n", end_time.tv_nsec - start_time.tv_nsec);
         syslog(LOG_CRIT, "Distance = %ld\n", V_SOUND*((end_time.tv_nsec - start_time.tv_nsec)*1000000000)/2);
 
