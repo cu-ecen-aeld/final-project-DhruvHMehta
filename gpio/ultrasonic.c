@@ -69,7 +69,16 @@ int main()
        return -1;
    }  
    syslog(LOG_CRIT, "Requested 0 at trigger");
-   
+  
+   /* Set the ECHO pin to input */
+   rv = gpiod_line_request_input(echo, "ultrasonic_echo");
+   if(rv != 0)
+   {
+       syslog(LOG_CRIT, "echo request get input failed, errno = %s", strerror(errno));
+       gpiod_chip_close(chip);
+       return -1;
+   }  
+
    /* Explicitly set the trigger pin low if it is not already */
    rv = gpiod_line_set_value(trigger, 0);
    if(rv != 0)
@@ -85,14 +94,14 @@ int main()
    /* Request gpio events for the echo pin for rising and falling edge
     * Time between the rising and falling edge (High time) is used to
     * calculate the distance from the sensor */
-   rv = gpiod_line_request_both_edges_events(echo, "ultrasonic_echo");
+   /*rv = gpiod_line_request_both_edges_events(echo, "ultrasonic_echo");
    if(rv != 0)
    {
        syslog(LOG_CRIT, "Request both edges failed, errno = %s", strerror(errno));
        gpiod_chip_close(chip);
        return -1;
    }
-
+*/
    // redundant
    syslog(LOG_CRIT,"Before sleep 1");
    sleep(1);
@@ -123,12 +132,14 @@ int main()
         wait_time.tv_nsec = 50000000;
 
         /* Spin here till the echo pin goes high */
-        do
+        while((gpiod_line_get_value(echo)) != 1)
+            usleep(100);
+        /*do
         {
             rv = gpiod_line_event_wait(echo, &wait_time);
         }
         while(rv <= 0);
-
+*/
         /* Mark the time when the echo pin went high */
         rv = clock_gettime(CLOCK_MONOTONIC, &start_time);
         if(rv != 0)
@@ -136,14 +147,17 @@ int main()
 
         syslog(LOG_CRIT, "Start time = %ldsec and %ldnsec", start_time.tv_sec, start_time.tv_nsec);
         /* Wait for the echo pin to go low. Don't wait beyond 50mS as it is not possible beyond 3m */
-        rv = gpiod_line_event_wait(echo, &wait_time);
+        while((gpiod_line_get_value(echo)) != 0)
+            usleep(100);
+
+        /*rv = gpiod_line_event_wait(echo, &wait_time);
         if(rv != 1)
         {
             syslog(LOG_CRIT,"gpiod_line_event_wait, errno = %s", strerror(errno));
             gpiod_chip_close(chip);
             return -1;
         }
-        
+        */
         /* Mark the time when the echo pin went low */
         rv = clock_gettime(CLOCK_MONOTONIC, &end_time);
         if(rv != 0)
