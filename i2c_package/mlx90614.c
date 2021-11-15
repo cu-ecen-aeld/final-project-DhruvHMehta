@@ -35,9 +35,6 @@ typedef union i2c_smbus_data i2c_data;
 
 int main()
 {
-    while(1)
-    {
-
     int fdev = open(I2C_DEV_PATH, O_RDWR); // open i2c bus
 
     if (fdev < 0) {
@@ -69,22 +66,25 @@ int main()
         .data = &data
     };
 
-    // do actual request
-    if (ioctl(fdev, I2C_SMBUS, &sdat) < 0) {
-        fprintf(stderr, "Failed to perform I2C_SMBUS transaction, error: %s\n", strerror(errno));
+    while(1)
+    {
+	// do actual request
+	if (ioctl(fdev, I2C_SMBUS, &sdat) < 0) {
+       	fprintf(stderr, "Failed to perform I2C_SMBUS transaction, error: %s\n", strerror(errno));
         return -1;
-    }
+    	}
+	
+	// calculate temperature in Celsius by formula from datasheet
+	double temp = (double) data.word;
+    	temp = (temp * 0.02)-0.01;
+    	temp = temp - 273.15;
 
-    // calculate temperature in Celsius by formula from datasheet
-    double temp = (double) data.word;
-    temp = (temp * 0.02)-0.01;
-    temp = temp - 273.15;
+    	// print result
+    	printf("Temperature value read from object = %04.2f\n", temp);
 
-    // print result
-    printf("Temperature value read from object = %04.2f\n", temp);
-
-    usleep(SLEEP_DURATION);
+    	usleep(SLEEP_DURATION);
     }
 
     return 0;
 }
+
