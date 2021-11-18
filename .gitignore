@@ -3,3 +3,5 @@ gpioreadtest
 gpiowritetest
 ultrasonictest
 mlx90614test
+mq_send
+mq_receive
