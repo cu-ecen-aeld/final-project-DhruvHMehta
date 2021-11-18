@@ -15,7 +15,7 @@ int main()
     int mq_receive_len;
     char buffer[sizeof(int)];
     int rx_data = 0;
-    int rx_prio;
+    unsigned int rx_prio;
 
     mq_receive_desc = mq_open("/sendmq", O_RDWR, S_IRWXU, &sendmq);
 
