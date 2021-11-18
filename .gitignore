@@ -3,6 +3,7 @@ gpioreadtest
 gpiowritetest
 ultrasonictest
 mlx90614test
+sensors
 mq_send
 mq_receive
 npipe_send
