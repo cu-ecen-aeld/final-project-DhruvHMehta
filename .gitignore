@@ -7,3 +7,4 @@ mq_send
 mq_receive
 npipe_send
 npipe_receive
+client_test
