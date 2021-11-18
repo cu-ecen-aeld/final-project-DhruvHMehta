@@ -7,7 +7,7 @@
 #include <time.h>
 #include <stdlib.h>
 
-#define FIFO_SEND   "senderfifo"
+#define FIFO_SEND   "/tmp/senderfifo"
 
 int main()
 {
@@ -28,7 +28,8 @@ int main()
         
         sleep(1);
     }
-
+    
+    close(fd);
     return 0;
 
 }
