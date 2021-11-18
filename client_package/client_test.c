@@ -8,7 +8,7 @@
 #include <stdint.h>
 
 #define SLEEP_TIME                      (1000000)
-#define GPIO_TOGGLE_PIN			(10)
+#define GPIO_TOGGLE_PIN			(25)
 #define DEFAULT_LED_STATUS		(1)
 
 struct gpiod_chip *gpio_driver_fd;
