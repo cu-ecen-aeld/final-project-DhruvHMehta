@@ -10,3 +10,4 @@ npipe_send
 npipe_receive
 client_test
 socketserver
+*.out
