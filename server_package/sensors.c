@@ -118,11 +118,6 @@ int main()
 
    syslog(LOG_CRIT, "Set 0 at trigger");
  
-   /* Power on the ultrasonic sensor */
-   rv = gpiod_line_set_value(u_power, 1);
-   if(rv != 0)
-       syslog(LOG_CRIT,"gpiod_line_set_value->1 failed");   
-
    /* Let pins stabilize */ 
    sleep(1);
 
