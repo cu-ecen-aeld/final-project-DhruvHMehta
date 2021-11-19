@@ -1,4 +1,5 @@
 // Server side C/C++ program to demonstrate Socket programming
+// geeksforgeeks - reference code to simulate server behaviour
 #include <unistd.h>
 #include <stdio.h>
 #include <sys/socket.h>
@@ -13,7 +14,7 @@ int main(int argc, char const *argv[])
     int opt = 1;
     int addrlen = sizeof(address);
     char buffer[1024] = {0};
-    char *hello = "DIST20TEMP34.50\n";
+    char *hello = "DIST20\nTEMP34.50\n";
     //char *hello = "TEMP33.33\nTEMP45.45\n";
     char* terminate = "TERMINATE\n";
        

@@ -74,38 +74,33 @@ int string_operations(const char rx_str[])
 	//
 	//copy the string to detect_str
 
-
-
-
 	// string identification process
 	if(0 == (strncmp(detect_str ,"TERMINATE",9)))
 	{
-		//printf("TERM\n");
-		printf("do the required close handling\n");
 		l_status = true;
+		return l_status;
 	}
-
+#if 1
 	if(0 == (strncmp(detect_str ,"DIST",4)))
 	{
 		strncpy(temp_str,detect_str,6);
 		strncpy(dest_str,temp_str+4,2);
 		dist_value = atoi(dest_str);
 		strncpy(temp_str,"",strlen(temp_str));
-		printf("Copied dist is %d\n",dist_value);
 	}
-
+#endif
 	printf("detect string is %s\n",detect_str);
 
-	if(0 == (strncmp(detect_str ,"TEMP",4)))
+	if(0 == (strncmp(detect_str+7 ,"TEMP",4)))
 	{
-		strncpy(temp_str,detect_str,9);
+		strncpy(temp_str,detect_str+7,9);
 		strncpy(dest_str,temp_str+4,5);
 		temperature_value = atof(dest_str);
 		strncpy(temp_str,"",strlen(temp_str));
-		printf("temp value is %f\n",temperature_value);
 	}
 
-	printf("dist_value = %d\n",dist_value);
+	printf("dist_value = %d , Temp_val is %f\n",dist_value,temperature_value);
+	
 	//data process
 	if((dist_value < 25) && (dist_value > 3))
 	{
