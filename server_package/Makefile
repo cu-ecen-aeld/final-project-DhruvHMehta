@@ -9,17 +9,23 @@ ifeq ($(CFLAGS),)
 endif
 
 ifeq ($(LDFLAGS),)
-	LDFLAGS= -lgpiod
+	LDFLAGS= -lgpiod -lrt
 endif
 
-all: sensors
-default: sensors
+all: sensors socketserver
+default: sensors socketserver
 
 sensors : sensors.o
 	$(CROSS_COMPILE)$(CC) $(CFLAGS) -o sensors sensors.o $(LDFLAGS)
 
+socketserver : server.o
+	$(CROSS_COMPILE)$(CC) $(CFLAGS) -o socketserver server.o $(LDFLAGS)
+
 sensors.o : sensors.c
 	$(CROSS_COMPILE)$(CC) $(CFLAGS) -c sensors.c $(LDFLAGS)
 
+server.o : server.c
+	$(CROSS_COMPILE)$(CC) $(CFLAGS) -c server.c $(LDFLAGS)
+
 clean :
-	rm -f sensors *.o
+	rm -f sensors socketserver *.o

@@ -25,6 +25,8 @@
 #include <linux/i2c-dev.h>
 #include <linux/i2c.h>
 
+#include <mqueue.h>
+
 /* Macros for Ultrasonic */
 #define GPIOCHIP0   "/dev/gpiochip0"
 #define TRIG        5
@@ -59,8 +61,10 @@ struct timespec start_time, end_time;
 typedef union i2c_smbus_data i2c_data;
 int fdev;
 struct i2c_smbus_ioctl_data sdat;
-// trying to read something from the device using SMBus READ request
 i2c_data data;
+
+/* Message queue to send data to socketserver */
+struct mq_attr sendmq;
 
 int Ultrasonic_Init()
 {
@@ -168,12 +172,28 @@ int Temperature_Init()
 
 int main()
 {
+    int distance = 0;
+
     /* Initalize Ultrasonic and Temperature Sensors */
     if(Ultrasonic_Init() == -1)
         return -1;
 
     if(Temperature_Init() == -1)
         return -1;
+
+    sendmq.mq_maxmsg = 10;
+    sendmq.mq_msgsize = sizeof(int);
+
+    mqd_t mq_send_desc;
+    int mq_send_len;
+    char buffer[sizeof(int)];
+
+    mq_send_desc = mq_open("/sendmq", O_CREAT | O_RDWR, S_IRWXU, &sendmq);
+    if(mq_send_desc < 0)
+    {
+        perror("Sender MQ failed");
+        exit(-1);
+    }
 
     while(1)
     {
@@ -222,8 +242,10 @@ int main()
         /* Distance between object and sensor is calculated using d = v*(Tend - Tstart)/2
          * Convert nsec to s -> 10^-9 and convert m to cm 10^2 -> Final division -> 10^-7*/
         syslog(LOG_CRIT, "Time difference = %ld\n", end_time.tv_nsec - start_time.tv_nsec);
-        syslog(LOG_CRIT, "Distance = %ld\ncm", (V_SOUND*(end_time.tv_nsec - start_time.tv_nsec)/10000000)/2);
-        printf("Distance = %ld\ncm", (V_SOUND*(end_time.tv_nsec - start_time.tv_nsec)/10000000)/2);
+        
+        distance = (V_SOUND*(end_time.tv_nsec - start_time.tv_nsec)/10000000)/2;
+        syslog(LOG_CRIT, "Distance = %dcm\n", distance);
+        printf("Distance = %dcm\n", distance);
 
         /*******************
          * Temperature Read
@@ -242,6 +264,12 @@ int main()
 
     	// print result
     	printf("Temperature value read from object = %04.2f\n", temp);
+
+        /* Send data in message queue */
+        memcpy(buffer, &distance, sizeof(int));
+        mq_send_len = mq_send(mq_send_desc, buffer, sizeof(int), 1);
+        if(mq_send_len < 0)
+            perror("Did not send any data");
 
         /* Wait a second before next measurement */
         sleep(1);        
