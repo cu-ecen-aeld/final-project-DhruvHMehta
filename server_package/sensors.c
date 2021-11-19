@@ -57,10 +57,13 @@ struct timespec start_time, end_time;
 
 /* Temperature i2c_smbus_data struct */
 typedef union i2c_smbus_data i2c_data;
+int fdev;
+struct i2c_smbus_ioctl_data sdat;
+// trying to read something from the device using SMBus READ request
+i2c_data data;
 
-int main()
+int Ultrasonic_Init()
 {
-
     /******************************************************
      *
      * Ultrasonic Configuration
@@ -121,13 +124,19 @@ int main()
    /* Let pins stabilize */ 
    sleep(1);
 
+   return 0;
+
+}
+
+int Temperature_Init()
+{
     /*********************************************************
      *
      * I2C Temperature Configuration
      *
      ********************************************************/
 
-    int fdev = open(I2C_DEV_PATH, O_RDWR); // open i2c bus
+    fdev = open(I2C_DEV_PATH, O_RDWR); // open i2c bus
 
     if (fdev < 0) {
         fprintf(stderr, "Failed to open I2C interface %s Error: %s\n", I2C_DEV_PATH, strerror(errno));
@@ -147,21 +156,33 @@ int main()
         return -1;
     }
 
-    // trying to read something from the device using SMBus READ request
-    i2c_data data;
     char command = TEMPERATURE_TYPE; 
     // build request structure
-    struct i2c_smbus_ioctl_data sdat = {
-        .read_write = I2C_SMBUS_READ,
-        .command = command,
-        .size = I2C_SMBUS_WORD_DATA,
-        .data = &data
-    };
+   sdat.read_write = I2C_SMBUS_READ,
+   sdat.command = command,
+   sdat.size = I2C_SMBUS_WORD_DATA,
+   sdat.data = &data;
    
-   while(1)
+    return 0;
+}
+
+int main()
+{
+    /* Initalize Ultrasonic and Temperature Sensors */
+    if(Ultrasonic_Init() == -1)
+        return -1;
+
+    if(Temperature_Init() == -1)
+        return -1;
+
+    while(1)
     {
+        /******************
+         * Ultrasonic Read
+         *****************/
+
         /* Send a trigger pulse of 10uS to initate a distance read */
-        rv = gpiod_line_set_value(trigger, 1);
+        int rv = gpiod_line_set_value(trigger, 1);
         if(rv != 0)
             syslog(LOG_CRIT,"gpiod_line_set_value->1 failed, errno = %s", strerror(errno));
 
@@ -180,8 +201,7 @@ int main()
         usleep(100);
 
         /* Spin here till the echo pin goes high */
-        while((gpiod_line_get_value(echo)) != 1)
-            usleep(100);
+        while((gpiod_line_get_value(echo)) != 1);
         
         /* Mark the time when the echo pin went high */
         rv = clock_gettime(CLOCK_MONOTONIC, &start_time);
@@ -190,8 +210,7 @@ int main()
 
         syslog(LOG_CRIT, "Start time = %ldsec and %ldnsec", start_time.tv_sec, start_time.tv_nsec);
         /* Wait for the echo pin to go low. Don't wait beyond 50mS as it is not possible beyond 3m */
-        while((gpiod_line_get_value(echo)) != 0)
-            usleep(100);
+        while((gpiod_line_get_value(echo)) != 0);
 
         /* Mark the time when the echo pin went low */
         rv = clock_gettime(CLOCK_MONOTONIC, &end_time);
@@ -205,6 +224,10 @@ int main()
         syslog(LOG_CRIT, "Time difference = %ld\n", end_time.tv_nsec - start_time.tv_nsec);
         syslog(LOG_CRIT, "Distance = %ld\ncm", (V_SOUND*(end_time.tv_nsec - start_time.tv_nsec)/10000000)/2);
         printf("Distance = %ld\ncm", (V_SOUND*(end_time.tv_nsec - start_time.tv_nsec)/10000000)/2);
+
+        /*******************
+         * Temperature Read
+         *******************/
 
         // do actual request
 	    if (ioctl(fdev, I2C_SMBUS, &sdat) < 0) {
@@ -224,7 +247,7 @@ int main()
         sleep(1);        
     }
 // gpio_chip_close(chip);
-
+return 0;
 }
 
 
