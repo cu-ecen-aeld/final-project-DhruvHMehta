@@ -22,7 +22,7 @@
 #define GPIO_TOGGLE_PIN				(25)
 #define DEFAULT_LED_STATUS		(1)
 //for client functionality
-#define PORT_NO								(8080)
+#define PORT_NO								(9000)
 #define LED_TOGGLE_TIME				(250*(USEC_TO_MSEC))
 
 //gpio related initialization
