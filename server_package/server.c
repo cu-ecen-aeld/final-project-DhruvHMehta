@@ -169,9 +169,9 @@ int main(int argc, char* argv[])
 	/* Setting this for use with getaddrinfo for bind() */
 	hints.ai_family = PF_INET;
 	hints.ai_socktype = SOCK_STREAM;
-	hints.ai_flags =  AI_NUMERICHOST;
+	hints.ai_flags =  AI_PASSIVE;
 
-	int rc = getaddrinfo("10.0.0.247", PORT, &hints, &sockaddrinfo);
+	int rc = getaddrinfo(NULL, PORT, &hints, &sockaddrinfo);
 	/* Error occurred in getaddrinfo, return -1 on error */
 	if(rc != 0)
 	{
