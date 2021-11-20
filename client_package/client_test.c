@@ -25,6 +25,8 @@
 #define PORT_NO								(9000)
 #define LED_TOGGLE_TIME				(250*(USEC_TO_MSEC))
 
+#define LOCALTEST 1
+
 //gpio related initialization
 struct gpiod_chip *gpio_driver_fd;
 struct gpiod_line *gpio_LED_line_selected;
@@ -46,8 +48,9 @@ int main()
 	bool dataprocessing_status = false;
 	bool client_init_status = false;
 	char buffer[1024] = {0};
-	//gpio_init();
-	
+#if LOCALTEST
+    gpio_init();
+#endif
 	client_init_status = client_init();
 	if(client_init_status == false)
 	{
@@ -64,7 +67,6 @@ int main()
 		{
 			exit(1);
 		}
-		//usleep(SLEEP_TIME);
 	}
 }
 
@@ -81,7 +83,7 @@ bool client_init()
 	server_address.sin_family = AF_INET;
 	server_address.sin_port = htons(PORT_NO);
 	
-	int client_inet_pton_fd = inet_pton(AF_INET,"127.0.0.1",&server_address.sin_addr);
+	int client_inet_pton_fd = inet_pton(AF_INET,"10.0.247",&server_address.sin_addr);
 	if(client_inet_pton_fd <= 0)
 	{
 		perror("client_inet_pton_fd");  
@@ -154,8 +156,10 @@ int data_processing(const char rx_str[])
 void data_reception_indication()
 {
 	LED_status ^= 1;
-	//gpiod_line_set_value(gpio_LED_line_selected,LED_status);
-	printf("LED_STATUS = %d\n",LED_status);
+#if LOCALTEST
+    gpiod_line_set_value(gpio_LED_line_selected,LED_status);
+#endif	
+    printf("LED_STATUS = %d\n",LED_status);
 	usleep(LED_TOGGLE_TIME);
 	LED_status ^= 1;
 	printf("LED_STATUS = %d\n",LED_status);	
