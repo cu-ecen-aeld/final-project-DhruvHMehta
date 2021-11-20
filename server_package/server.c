@@ -37,6 +37,7 @@
 #define PORT 		"9000"
 #define BACKLOG		5
 #define BUF_SIZE	100
+#define MQ
 /* Socket File descriptor */
 int socket_fd;
 bool quitpgm = 0;
@@ -67,8 +68,8 @@ void TxRxData(void *thread_param)
 	struct fnparam *l_fnp = (struct fnparam*) thread_param;
 
 #ifdef MQ
-    char txbuf[10];
-    memcpy(txbuf, &(l_fnp->ultrasonic_distance), sizeof(int));
+    char txbuf[20];
+    sprintf(txbuf, "DIST%02d\nTEMP34.56\n", l_fnp->ultrasonic_distance);
 #else
     char *txbuf = "DIST20\nTEMP34.56\n";
 #endif
@@ -102,21 +103,6 @@ while(1)
 }
 #endif
 
-#ifdef MQ
-	/* Close connection */
-	close(l_fnp->f_client_fd);
-
-	if(l_fnp->f_client_fd == -1)
-	{
-		//free(txbuf);
-		printf("close failed\n");
-		return;
-	}
-    
-	syslog(LOG_DEBUG, "Closed connection from %s\n", l_fnp->f_IP);
-#endif
-    //free(txbuf);
-
 } // TxRxThread end
 
 
@@ -130,6 +116,7 @@ int main(int argc, char* argv[])
 	int startdaemon = 0;
 	pid_t pid;
 	int client_fd; 
+    struct fnparam f_param;
 
 #ifdef MQ    
     mqd_t mq_receive_desc;
@@ -265,7 +252,6 @@ int main(int argc, char* argv[])
 		/* Log connection IP */
 		syslog(LOG_DEBUG, "Accepted connection from %s\n", IP);
 
-        struct fnparam f_param;
 		f_param.f_client_fd = client_fd;
 		strcpy(f_param.f_IP, IP);
 #ifdef MQ
@@ -284,6 +270,7 @@ cleanexit:
     syslog(LOG_DEBUG, "Caught signal, exiting\n");
 	close(client_fd);
 	close(socket_fd);
+    syslog(LOG_DEBUG, "Closed connection from %s\n", f_param.f_IP);
 
 	return 0;
 
