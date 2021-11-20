@@ -25,7 +25,7 @@
 #define PORT_NO								(9000)
 #define LED_TOGGLE_TIME				(250*(USEC_TO_MSEC))
 
-#define GPIOSTATUS 0
+#define GPIOSTATUS 1
 
 //gpio related initialization
 struct gpiod_chip *gpio_driver_fd;
