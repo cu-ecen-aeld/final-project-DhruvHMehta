@@ -37,7 +37,6 @@
 #define PORT 		"9000"
 #define BACKLOG		5
 #define BUF_SIZE	100
-
 /* Socket File descriptor */
 int socket_fd;
 bool quitpgm = 0;
@@ -66,34 +65,17 @@ static void sighandler(int signo)
 void TxRxData(void *thread_param)
 {
 	struct fnparam *l_fnp = (struct fnparam*) thread_param;
-	//sigset_t new_set, old_set;
-	//char *txbuf;
-    //int rc;
 
-	//if((txbuf = (char *)malloc(BUF_SIZE*sizeof(char))) == NULL)
-	//{
-	//	perror("malloc failed");
-	//	return;
-	//}
-
-    /* For Signal Masking during recv and send */
-	//sigemptyset(&new_set);
-	//sigaddset(&new_set, SIGINT);
-	//sigaddset(&new_set, SIGTERM);
-
+#ifdef MQ
     char txbuf[10];
     memcpy(txbuf, &(l_fnp->ultrasonic_distance), sizeof(int));
+#else
+    char *txbuf = "DIST20\nTEMP34.56\n";
+#endif
 
-    /* Mask off signals while sending data */
-    //if((rc = sigprocmask(SIG_BLOCK, &new_set, &old_set)) == -1)
-    //    printf("sigprocmask failed\n");
-    
+#ifdef MQ
     /* Send data read from file to client */
     int sent_bytes = send(l_fnp->f_client_fd, txbuf, strlen(txbuf)+1, 0);
-
-    /* Unmask signals after data is sent */
-    //if((rc = sigprocmask(SIG_UNBLOCK, &old_set, NULL)) == -1)
-    //    printf("sigprocmask failed\n");
 
     /* Error in sending */
     if(sent_bytes == -1)
@@ -102,7 +84,25 @@ void TxRxData(void *thread_param)
         //free(txbuf);
         return;
     }
+ 
+#else
+while(1)
+{    
+    /* Send data read from file to client */
+    int sent_bytes = send(l_fnp->f_client_fd, txbuf, strlen(txbuf)+1, 0);
 
+    /* Error in sending */
+    if(sent_bytes == -1)
+    {
+        perror("send failed\n");
+        //free(txbuf);
+        return;
+    }
+    sleep(1);
+}
+#endif
+
+#ifdef MQ
 	/* Close connection */
 	close(l_fnp->f_client_fd);
 
@@ -114,7 +114,8 @@ void TxRxData(void *thread_param)
 	}
     
 	syslog(LOG_DEBUG, "Closed connection from %s\n", l_fnp->f_IP);
-	//free(txbuf);
+#endif
+    //free(txbuf);
 
 } // TxRxThread end
 
@@ -129,13 +130,14 @@ int main(int argc, char* argv[])
 	int startdaemon = 0;
 	pid_t pid;
 	int client_fd; 
-    
+
+#ifdef MQ    
     mqd_t mq_receive_desc;
     int mq_receive_len;
     char buffer[sizeof(int)];
     int rx_data;
     unsigned int rx_prio;
-
+#endif
 	memset(&hints, 0, sizeof(hints));
 
 	openlog(NULL, 0, LOG_USER);
@@ -234,14 +236,14 @@ int main(int argc, char* argv[])
 		dup(0);
 
 	}
-
+#ifdef MQ
    mq_receive_desc = mq_open("/sendmq", O_RDWR, S_IRWXU, &sendmq);
   if(mq_receive_desc < 0)
   {
     perror("Reciever MQ failed");
     exit(-1);
   } 
-
+#endif
 	while(!quitpgm)
 	{		
 
@@ -266,14 +268,14 @@ int main(int argc, char* argv[])
         struct fnparam f_param;
 		f_param.f_client_fd = client_fd;
 		strcpy(f_param.f_IP, IP);
-
+#ifdef MQ
         mq_receive_len = mq_receive(mq_receive_desc, buffer, sizeof(int), &rx_prio);
         if(mq_receive_len < 0)
             perror("Did not send any data");
 
         memcpy(&rx_data, buffer, sizeof(int));
         f_param.ultrasonic_distance = rx_data;
-
+#endif
         TxRxData(&f_param);
 	}
 
