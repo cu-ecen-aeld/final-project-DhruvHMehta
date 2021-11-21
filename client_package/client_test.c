@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
 	while(1)
 	{
 		read(client_socket_fd,buffer,sizeof(buffer));
-#if 1
+#if DEBUG
 		printf("buffer is %s\n",buffer);
 #endif
 		dataprocessing_status = data_processing(buffer);
@@ -155,8 +155,10 @@ int data_processing(const char rx_str[])
 		strncpy(temp_str,"",strlen(temp_str));
 	}
 
+#if DEBUG
 	printf("distance value is = %d , Temperature value is %f\n",dist_value,temperature_value);
-	
+#endif
+
 	//data process
 	if((dist_value < 15) && (dist_value > 4))
 	{
