@@ -35,7 +35,7 @@ uint8_t LED_status;
 int gpio_init();
 
 //client related initialization
-bool client_init();
+bool client_init(const char IP[]);
 void data_reception_indication();
 
 //data processing operations
@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
 	gpio_init();
 #endif
 
-	client_init_status = client_init();
+	client_init_status = client_init(IP);
 	if(client_init_status == false)
 	{
 		perror("client_init");  
@@ -87,7 +87,7 @@ int main(int argc, char *argv[])
 	}
 }
 
-bool client_init()
+bool client_init(const char IP[])
 {
 	client_socket_fd = socket(AF_INET,SOCK_STREAM,0);
 	if(client_socket_fd < 0)
@@ -100,7 +100,7 @@ bool client_init()
 	server_address.sin_family = AF_INET;
 	server_address.sin_port = htons(PORT_NO);
 	
-	int client_inet_pton_fd = inet_pton(AF_INET,"10.0.0.247",&server_address.sin_addr);
+	int client_inet_pton_fd = inet_pton(AF_INET,IP,&server_address.sin_addr);
 	if(client_inet_pton_fd <= 0)
 	{
 		perror("client_inet_pton_fd");  
