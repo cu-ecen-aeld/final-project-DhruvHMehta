@@ -37,6 +37,7 @@
 #define PORT 		"9000"
 #define BACKLOG		5
 #define BUF_SIZE	100
+#define MQ
 /* Socket File descriptor */
 int socket_fd;
 bool quitpgm = 0;
@@ -45,9 +46,16 @@ struct mq_attr sendmq;
 struct fnparam
 {
     int f_client_fd;
-    int ultrasonic_distance;
     char f_IP[20];
 };
+
+#ifdef MQ    
+    mqd_t mq_receive_desc;
+    int mq_receive_len;
+    char buffer[sizeof(int)];
+    int rx_data;
+    unsigned int rx_prio;
+#endif
 
 static void sighandler(int signo)
 {
@@ -68,38 +76,46 @@ void TxRxData(void *thread_param)
 
 #ifdef MQ
     char txbuf[20];
-    sprintf(txbuf, "DIST%02d\nTEMP34.56\n", l_fnp->ultrasonic_distance);
 #else
     char *txbuf = "DIST20\nTEMP34.56\n";
 #endif
 
 #ifdef MQ
-    /* Send data read from file to client */
-    int sent_bytes = send(l_fnp->f_client_fd, txbuf, strlen(txbuf)+1, 0);
-
-    /* Error in sending */
-    if(sent_bytes == -1)
+    while(1)
     {
-        perror("send failed\n");
-        //free(txbuf);
-        return;
+        mq_receive_len = mq_receive(mq_receive_desc, buffer, sizeof(int), &rx_prio);
+        if(mq_receive_len < 0)
+            perror("Did not receive any data");
+
+        memcpy(&rx_data, buffer, sizeof(int));
+        sprintf(txbuf, "DIST%02d\nTEMP34.56\n", rx_data);
+        
+        /* Send data read from file to client */
+        int sent_bytes = send(l_fnp->f_client_fd, txbuf, strlen(txbuf)+1, 0);
+
+        /* Error in sending */
+        if(sent_bytes == -1)
+        {
+            perror("send failed\n");
+            //free(txbuf);
+            return;
+        }
     }
- 
 #else
-while(1)
-{    
-    /* Send data read from file to client */
-    int sent_bytes = send(l_fnp->f_client_fd, txbuf, strlen(txbuf)+1, 0);
+    while(1)
+    {    
+        /* Send data read from file to client */
+        int sent_bytes = send(l_fnp->f_client_fd, txbuf, strlen(txbuf)+1, 0);
 
-    /* Error in sending */
-    if(sent_bytes == -1)
-    {
-        perror("send failed\n");
-        //free(txbuf);
-        return;
+        /* Error in sending */
+        if(sent_bytes == -1)
+        {
+            perror("send failed\n");
+            //free(txbuf);
+            return;
+        }
+        sleep(1);
     }
-    sleep(1);
-}
 #endif
 
 } // TxRxThread end
@@ -117,13 +133,6 @@ int main(int argc, char* argv[])
 	int client_fd; 
     struct fnparam f_param;
 
-#ifdef MQ    
-    mqd_t mq_receive_desc;
-    int mq_receive_len;
-    char buffer[sizeof(int)];
-    int rx_data;
-    unsigned int rx_prio;
-#endif
 	memset(&hints, 0, sizeof(hints));
 
 	openlog(NULL, 0, LOG_USER);
@@ -253,14 +262,7 @@ int main(int argc, char* argv[])
 
 		f_param.f_client_fd = client_fd;
 		strcpy(f_param.f_IP, IP);
-#ifdef MQ
-        mq_receive_len = mq_receive(mq_receive_desc, buffer, sizeof(int), &rx_prio);
-        if(mq_receive_len < 0)
-            perror("Did not send any data");
 
-        memcpy(&rx_data, buffer, sizeof(int));
-        f_param.ultrasonic_distance = rx_data;
-#endif
         TxRxData(&f_param);
 	}
 
