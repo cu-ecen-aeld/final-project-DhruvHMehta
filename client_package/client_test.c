@@ -14,19 +14,19 @@
 #include <arpa/inet.h>
 
 //generic
-#define MSEC_TO_SEC										(1000)
-#define USEC_TO_MSEC									(1000)
+#define MSEC_TO_SEC			(1000)
+#define USEC_TO_MSEC			(1000)
 //for gpio functionality
-#define GPIO_CHIP_PATH								("/dev/gpiochip0")
-#define SLEEP_TIME										(5*(USEC_TO_MSEC)*(MSEC_TO_SEC))
-#define GPIO_TOGGLE_PIN								(25)
-#define DEFAULT_LED_STATUS						(0)
+#define GPIO_CHIP_PATH			("/dev/gpiochip0")
+#define SLEEP_TIME			(5*(USEC_TO_MSEC)*(MSEC_TO_SEC))
+#define GPIO_TOGGLE_PIN			(25)
+#define DEFAULT_LED_STATUS		(0)
 //for client functionality
-#define PORT_NO												(9000)
-#define LED_TOGGLE_TIME								(250*(USEC_TO_MSEC))
+#define PORT_NO				(9000)
+#define LED_TOGGLE_TIME			(250*(USEC_TO_MSEC))
 
-#define GPIOSTATUS										(1)
-#define DEBUG													(0)
+#define GPIOSTATUS			(1)
+#define DEBUG				(0)
 
 //gpio related initialization
 struct gpiod_chip *gpio_driver_fd;
@@ -76,7 +76,7 @@ int main(int argc, char *argv[])
 	while(1)
 	{
 		read(client_socket_fd,buffer,sizeof(buffer));
-#if DEBUG
+#if 1
 		printf("buffer is %s\n",buffer);
 #endif
 		dataprocessing_status = data_processing(buffer);
@@ -113,9 +113,9 @@ bool client_init()
 		perror("client_connect_fd");  
 		return false; 
 	}
-#if DEBUG
+
 	printf("client init completed\n");
-#endif
+
 	return true;
 }
 
@@ -155,9 +155,8 @@ int data_processing(const char rx_str[])
 		strncpy(temp_str,"",strlen(temp_str));
 	}
 
-#if DEBUG
-	printf("DEBUG::distance value is = %d , Temperature value is %f\n",dist_value,temperature_value);
-#endif
+	printf("distance value is = %d , Temperature value is %f\n",dist_value,temperature_value);
+	
 	//data process
 	if((dist_value < 15) && (dist_value > 4))
 	{
@@ -218,9 +217,9 @@ int gpio_init()
 	{
 		ret_status = -1; gpiod_chip_close(gpio_driver_fd); return ret_status; 
 	}
-#if DEBUG	
+
 	printf("GPIO init complete\n");
-#endif	
+
 	return ret_status;
 }
 	
