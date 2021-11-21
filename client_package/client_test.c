@@ -15,17 +15,17 @@
 
 
 //generic
-#define MSEC_TO_SEC						(1000)
+#define MSEC_TO_SEC					(1000)
 #define USEC_TO_MSEC					(1000)
 //for gpio functionality
-#define SLEEP_TIME						(5*(USEC_TO_MSEC)*(MSEC_TO_SEC))
-#define GPIO_TOGGLE_PIN				(25)
-#define DEFAULT_LED_STATUS		(1)
+#define SLEEP_TIME					(5*(USEC_TO_MSEC)*(MSEC_TO_SEC))
+#define GPIO_TOGGLE_PIN					(25)
+#define DEFAULT_LED_STATUS				(1)
 //for client functionality
-#define PORT_NO								(9000)
-#define LED_TOGGLE_TIME				(250*(USEC_TO_MSEC))
+#define PORT_NO						(9000)
+#define LED_TOGGLE_TIME					(250*(USEC_TO_MSEC))
 
-#define GPIOSTATUS 0
+#define GPIOSTATUS 1
 
 //gpio related initialization
 struct gpiod_chip *gpio_driver_fd;
@@ -45,9 +45,9 @@ int client_socket_fd;
 
 int main(int argc, char *argv[])
 {
-	bool dataprocessing_status = false;
-	bool client_init_status = false;
-	char buffer[1024] = {0};
+    bool dataprocessing_status = false;
+    bool client_init_status = false;
+    char buffer[1024] = {0};
     char IP[20] = {0};
 
     if(argc != 2)
@@ -62,23 +62,24 @@ int main(int argc, char *argv[])
 #if GPIOSTATUS
     gpio_init();
 #endif
-	client_init_status = client_init();
-	if(client_init_status == false)
-	{
-		perror("client_init");  
-		return -1;
-	}
 
-	while(1)
-	{
-		read(client_socket_fd,buffer,1024);
-		printf("buffer is %s\n",buffer);
-		dataprocessing_status = data_processing(buffer);
-		if(dataprocessing_status == true)
-		{
-			exit(1);
-		}
-	}
+    client_init_status = client_init();
+    if(client_init_status == false)
+    {
+      perror("client_init");  
+      return -1;
+    }
+    
+    while(1)
+    {
+      read(client_socket_fd,buffer,1024);
+      printf("buffer is %s\n",buffer);
+      dataprocessing_status = data_processing(buffer);
+      if(dataprocessing_status == true)
+      {
+	exit(1);
+      }
+    }
 }
 
 bool client_init()
@@ -90,7 +91,7 @@ bool client_init()
 		return false; 
 	}
 	
-  struct sockaddr_in server_address;
+	struct sockaddr_in server_address;
 	server_address.sin_family = AF_INET;
 	server_address.sin_port = htons(PORT_NO);
 	
@@ -168,33 +169,41 @@ void data_reception_indication()
 {
 	LED_status ^= 1;
 #if GPIOSTATUS
-    gpiod_line_set_value(gpio_LED_line_selected,LED_status);
+    	gpiod_line_set_value(gpio_LED_line_selected,LED_status);
 #endif	
-    printf("LED_STATUS = %d\n",LED_status);
+    	printf("LED_STATUS:B = %d\n",LED_status);
+	
 	usleep(LED_TOGGLE_TIME);
+	
 	LED_status ^= 1;
-	printf("LED_STATUS = %d\n",LED_status);	
+#if GPIOSTATUS
+    	gpiod_line_set_value(gpio_LED_line_selected,LED_status);
+#endif	
+	printf("LED_STATUS:A = %d\n",LED_status);	
 }
 
 int gpio_init()
 {
 	int rc = 0;
 	int ret_status = 0;
-    printf("init start\n");
+	//printf("init start\n");
+	
 	//get the file handler for gpio driver
 	gpio_driver_fd = gpiod_chip_open("/dev/gpiochip0");
 	if(!gpio_driver_fd)
 	{
 		ret_status = -1; return ret_status; 
 	}
-    printf("After chip open\n");
+	//printf("After chip open\n");
+	
 	//map the required gpio-pin to toggle
 	gpio_LED_line_selected = gpiod_chip_get_line(gpio_driver_fd,GPIO_TOGGLE_PIN);
 	if(!gpio_LED_line_selected)
 	{
 		ret_status = -1; gpiod_chip_close(gpio_driver_fd); return ret_status; 
 	}
-    printf("After get line\n");
+	//printf("After get line\n");
+	
 	//set the default pin line to one status
 	LED_status = DEFAULT_LED_STATUS;
 	rc = gpiod_line_request_output(gpio_LED_line_selected, "foobar", LED_status); 
@@ -202,7 +211,7 @@ int gpio_init()
 	{
 		ret_status = -1; gpiod_chip_close(gpio_driver_fd); return ret_status; 
 	}
-    printf("After request output\n");
+	printf("GPIO init complete\n");
 	return ret_status;
 }
 	
