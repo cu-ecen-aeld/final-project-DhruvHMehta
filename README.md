@@ -5,5 +5,4 @@ Click [here](https://github.com/cu-ecen-aeld/final-project-DhruvHMehta/wiki/Proj
 # Project Schedule
 Click [here](https://github.com/cu-ecen-aeld/final-project-DhruvHMehta/wiki/Final-Project-Schedule-Page) for Project Schedule Page
 # Team Members
-Dhruv Mehta (dhruv.mehta@colorado.edu)
-Rishab Shah (rishab.shah@colorado.edu)
+Dhruv Mehta (dhruv.mehta@colorado.edu)  <br>Rishab Shah (rishab.shah@colorado.edu)
