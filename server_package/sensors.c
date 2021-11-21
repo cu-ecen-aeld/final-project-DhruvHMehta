@@ -52,6 +52,8 @@
 #define I2C_SMBUS_WRITE 0 
 #endif
 
+#define DEBUG 0
+
 /* Ultrasonic variables for libgpiod pins and time */
 struct gpiod_chip *chip;
 struct gpiod_line *trigger, *echo, *u_power;
@@ -245,8 +247,9 @@ int main()
         
         distance = (V_SOUND*(end_time.tv_nsec - start_time.tv_nsec)/10000000)/2;
         syslog(LOG_CRIT, "Distance = %dcm\n", distance);
+#if DEBUG
         printf("Distance = %dcm\n", distance);
-
+#endif
         /*******************
          * Temperature Read
          *******************/
@@ -262,9 +265,10 @@ int main()
     	temp = (temp * 0.02)-0.01;
     	temp = temp - 273.15;
 
+#if DEBUG
     	// print result
     	printf("Temperature value read from object = %04.2f\n", temp);
-
+#endif
         /* Send data in message queue */
         memcpy(buffer, &distance, sizeof(int));
         memcpy(buffer + sizeof(int), &temp, sizeof(double));
