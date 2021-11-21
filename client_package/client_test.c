@@ -13,24 +13,25 @@
 #include <sys/socket.h>
 #include <arpa/inet.h>
 
-
 //generic
-#define MSEC_TO_SEC					(1000)
-#define USEC_TO_MSEC					(1000)
+#define MSEC_TO_SEC										(1000)
+#define USEC_TO_MSEC									(1000)
 //for gpio functionality
-#define SLEEP_TIME					(5*(USEC_TO_MSEC)*(MSEC_TO_SEC))
-#define GPIO_TOGGLE_PIN					(25)
-#define DEFAULT_LED_STATUS				(1)
+#define GPIO_CHIP_PATH								("/dev/gpiochip0")
+#define SLEEP_TIME										(5*(USEC_TO_MSEC)*(MSEC_TO_SEC))
+#define GPIO_TOGGLE_PIN								(25)
+#define DEFAULT_LED_STATUS						(0)
 //for client functionality
-#define PORT_NO						(9000)
-#define LED_TOGGLE_TIME					(250*(USEC_TO_MSEC))
+#define PORT_NO												(9000)
+#define LED_TOGGLE_TIME								(250*(USEC_TO_MSEC))
 
-#define GPIOSTATUS 1
+#define GPIOSTATUS										(1)
+#define DEBUG													(0)
 
 //gpio related initialization
 struct gpiod_chip *gpio_driver_fd;
 struct gpiod_line *gpio_LED_line_selected;
-uint8_t LED_status = 0;
+uint8_t LED_status;
 int gpio_init();
 
 //client related initialization
@@ -45,41 +46,45 @@ int client_socket_fd;
 
 int main(int argc, char *argv[])
 {
-    bool dataprocessing_status = false;
-    bool client_init_status = false;
-    char buffer[1024] = {0};
-    char IP[20] = {0};
+	bool dataprocessing_status = false;
+	bool client_init_status = false;
+	char buffer[1024] = {0};
+	char IP[20] = {0};
 
-    if(argc != 2)
-    {
-        printf("Usage client_test [IP]\n");
-        return -1;
-    }
+	if(argc != 2)
+	{
+		printf("Usage client_test [IP]\n");
+		return -1;
+	}
 
-    memcpy(IP, argv[1], strlen(argv[1]));
-    printf("Connecting to IP %s\n", IP);
+	memcpy(IP, argv[1], strlen(argv[1]));
+	printf("Connecting to Server's IP %s\n", IP);
 
 #if GPIOSTATUS
-    gpio_init();
+	gpio_init();
 #endif
 
-    client_init_status = client_init();
-    if(client_init_status == false)
-    {
-      perror("client_init");  
-      return -1;
-    }
-    
-    while(1)
-    {
-      read(client_socket_fd,buffer,1024);
-      printf("buffer is %s\n",buffer);
-      dataprocessing_status = data_processing(buffer);
-      if(dataprocessing_status == true)
-      {
-	exit(1);
-      }
-    }
+	client_init_status = client_init();
+	if(client_init_status == false)
+	{
+		perror("client_init");  
+		return -1;
+	}
+
+	LED_status = DEFAULT_LED_STATUS;
+	
+	while(1)
+	{
+		read(client_socket_fd,buffer,sizeof(buffer));
+#if DEBUG
+		printf("buffer is %s\n",buffer);
+#endif
+		dataprocessing_status = data_processing(buffer);
+		if(true == dataprocessing_status)
+		{
+			exit(1);
+		}
+	}
 }
 
 bool client_init()
@@ -108,8 +113,9 @@ bool client_init()
 		perror("client_connect_fd");  
 		return false; 
 	}
-	
+#if DEBUG
 	printf("client init completed\n");
+#endif
 	return true;
 }
 
@@ -141,8 +147,6 @@ int data_processing(const char rx_str[])
 		strncpy(temp_str,"",strlen(temp_str));
 	}
 
-	printf("detect string is %s\n",detect_str);
-
 	if(0 == (strncmp(detect_str+7 ,"TEMP",4)))
 	{
 		strncpy(temp_str,detect_str+7,9);
@@ -151,14 +155,15 @@ int data_processing(const char rx_str[])
 		strncpy(temp_str,"",strlen(temp_str));
 	}
 
-	printf("dist_value = %d , Temp_val is %f\n",dist_value,temperature_value);
-
+#if DEBUG
+	printf("DEBUG::distance value is = %d , Temperature value is %f\n",dist_value,temperature_value);
+#endif
 	//data process
-	if((dist_value < 15) && (dist_value > 3))
+	if((dist_value < 15) && (dist_value > 4))
 	{
 		if(temperature_value > 0)
 		{
-			printf("Display the value on the terminal\n");
+			printf("Distance is = %d , Temperature is %f\n",dist_value,temperature_value);
 		}
 	}
 
@@ -169,32 +174,35 @@ void data_reception_indication()
 {
 	LED_status ^= 1;
 #if GPIOSTATUS
-    	gpiod_line_set_value(gpio_LED_line_selected,LED_status);
-#endif	
-    	printf("LED_STATUS:B = %d\n",LED_status);
-	
+	gpiod_line_set_value(gpio_LED_line_selected,LED_status);
+#endif
+
+#if DEBUG
+	printf("LED_STATUS:B = %d\n",LED_status);
+#endif
 	usleep(LED_TOGGLE_TIME);
 	
 	LED_status ^= 1;
 #if GPIOSTATUS
-    	gpiod_line_set_value(gpio_LED_line_selected,LED_status);
+	gpiod_line_set_value(gpio_LED_line_selected,LED_status);
 #endif	
-	printf("LED_STATUS:A = %d\n",LED_status);	
+
+#if DEBUG
+	printf("LED_STATUS:A = %d\n",LED_status);
+#endif	
 }
 
 int gpio_init()
 {
 	int rc = 0;
 	int ret_status = 0;
-	//printf("init start\n");
 	
 	//get the file handler for gpio driver
-	gpio_driver_fd = gpiod_chip_open("/dev/gpiochip0");
+	gpio_driver_fd = gpiod_chip_open(GPIO_CHIP_PATH);
 	if(!gpio_driver_fd)
 	{
 		ret_status = -1; return ret_status; 
 	}
-	//printf("After chip open\n");
 	
 	//map the required gpio-pin to toggle
 	gpio_LED_line_selected = gpiod_chip_get_line(gpio_driver_fd,GPIO_TOGGLE_PIN);
@@ -202,7 +210,6 @@ int gpio_init()
 	{
 		ret_status = -1; gpiod_chip_close(gpio_driver_fd); return ret_status; 
 	}
-	//printf("After get line\n");
 	
 	//set the default pin line to one status
 	LED_status = DEFAULT_LED_STATUS;
@@ -211,7 +218,9 @@ int gpio_init()
 	{
 		ret_status = -1; gpiod_chip_close(gpio_driver_fd); return ret_status; 
 	}
+#if DEBUG	
 	printf("GPIO init complete\n");
+#endif	
 	return ret_status;
 }
 	
