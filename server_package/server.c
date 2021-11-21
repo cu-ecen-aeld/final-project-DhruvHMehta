@@ -1,16 +1,11 @@
 /************************************************************************
 *
-*	AESD SOCKET PROGRAM
-*	Brief: Program to accept multiple connections over port 9000.
+*	SERVER PROGRAM
+*	Brief: Program to send sensor data received using message queues to CLIENT.
 *
+*   Author: Dhruv Mehta
 *	Code References: https://beej.us/guide/bgnet/html/
 *	Beej's Guide to Network Programming
-*
-*	https://github.com/cu-ecen-aeld/aesd-lectures/blob/master/lecture9/timer_thread.c
-*	Timer Thread Example Code from Aesd-assignments repo
-*
-*	https://github.com/stockrt/queue.h/blob/master/sample.c
-*	Used for understanding the usage of Singly Linked List from queue.h
 *
 *************************************************************************/
 #include <stdio.h>
@@ -52,8 +47,9 @@ struct fnparam
 #ifdef MQ    
     mqd_t mq_receive_desc;
     int mq_receive_len;
-    char buffer[sizeof(int)];
-    int rx_data;
+    char buffer[sizeof(int) + sizeof(double)];
+    int distance_data;
+    double temperature_data;
     unsigned int rx_prio;
 #endif
 
@@ -83,12 +79,13 @@ void TxRxData(void *thread_param)
 #ifdef MQ
     while(1)
     {
-        mq_receive_len = mq_receive(mq_receive_desc, buffer, sizeof(int), &rx_prio);
+        mq_receive_len = mq_receive(mq_receive_desc, buffer, sizeof(int) + sizeof(double), &rx_prio);
         if(mq_receive_len < 0)
             perror("Did not receive any data");
 
-        memcpy(&rx_data, buffer, sizeof(int));
-        sprintf(txbuf, "DIST%02d\nTEMP34.56\n", rx_data);
+        memcpy(&distance_data, buffer, sizeof(int));
+        memcpy(&temperature_data, buffer + sizeof(int), sizeof(double));
+        sprintf(txbuf, "DIST%02d\nTEMP%.2lf\n", distance_data, temperature_data);
         
         /* Send data read from file to client */
         int sent_bytes = send(l_fnp->f_client_fd, txbuf, strlen(txbuf)+1, 0);
@@ -97,7 +94,6 @@ void TxRxData(void *thread_param)
         if(sent_bytes == -1)
         {
             perror("send failed\n");
-            //free(txbuf);
             return;
         }
     }
@@ -111,7 +107,6 @@ void TxRxData(void *thread_param)
         if(sent_bytes == -1)
         {
             perror("send failed\n");
-            //free(txbuf);
             return;
         }
         sleep(1);

@@ -182,11 +182,11 @@ int main()
         return -1;
 
     sendmq.mq_maxmsg = 10;
-    sendmq.mq_msgsize = sizeof(int);
+    sendmq.mq_msgsize = sizeof(int) + sizeof(double);
 
     mqd_t mq_send_desc;
     int mq_send_len;
-    char buffer[sizeof(int)];
+    char buffer[sizeof(int) + sizeof(double)];
 
     mq_send_desc = mq_open("/sendmq", O_CREAT | O_RDWR, S_IRWXU, &sendmq);
     if(mq_send_desc < 0)
@@ -267,7 +267,9 @@ int main()
 
         /* Send data in message queue */
         memcpy(buffer, &distance, sizeof(int));
-        mq_send_len = mq_send(mq_send_desc, buffer, sizeof(int), 1);
+        memcpy(buffer + sizeof(int), &temp, sizeof(double));
+
+        mq_send_len = mq_send(mq_send_desc, buffer, sizeof(int) + sizeof(double), 1);
         if(mq_send_len < 0)
             perror("Did not send any data");
 
