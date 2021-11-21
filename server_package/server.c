@@ -40,17 +40,17 @@ struct mq_attr sendmq;
 
 struct fnparam
 {
-    int f_client_fd;
-    char f_IP[20];
+	int f_client_fd;
+	char f_IP[20];
 };
 
 #ifdef MQ    
-    mqd_t mq_receive_desc;
-    int mq_receive_len;
-    char buffer[sizeof(int) + sizeof(double)];
-    int distance_data;
-    double temperature_data;
-    unsigned int rx_prio;
+	mqd_t mq_receive_desc;
+	int mq_receive_len;
+	char buffer[sizeof(int) + sizeof(double)];
+	int distance_data;
+	double temperature_data;
+	unsigned int rx_prio;
 #endif
 
 static void sighandler(int signo)
@@ -71,46 +71,47 @@ void TxRxData(void *thread_param)
 	struct fnparam *l_fnp = (struct fnparam*) thread_param;
 
 #ifdef MQ
-    char txbuf[20];
+	char txbuf[20];
 #else
-    char *txbuf = "DIST20\nTEMP34.56\n";
+	char *txbuf = "DIST20\nTEMP34.56\n";
 #endif
 
 #ifdef MQ
-    while(1)
-    {
-        mq_receive_len = mq_receive(mq_receive_desc, buffer, sizeof(int) + sizeof(double), &rx_prio);
-        if(mq_receive_len < 0)
-            perror("Did not receive any data");
+	while(1)
+	{
+		mq_receive_len = mq_receive(mq_receive_desc, buffer, sizeof(int) + sizeof(double), &rx_prio);
+		if(mq_receive_len < 0)
+			perror("Did not receive any data");
 
-        memcpy(&distance_data, buffer, sizeof(int));
-        memcpy(&temperature_data, buffer + sizeof(int), sizeof(double));
-        sprintf(txbuf, "DIST%02d\nTEMP%.2lf\n", distance_data, temperature_data);
-        
-        /* Send data read from file to client */
-        int sent_bytes = send(l_fnp->f_client_fd, txbuf, strlen(txbuf)+1, 0);
-
-        /* Error in sending */
-        if(sent_bytes == -1)
-        {
-            perror("send failed\n");
-            return;
-        }
-    }
+		memcpy(&distance_data, buffer, sizeof(int));
+		memcpy(&temperature_data, buffer + sizeof(int), sizeof(double));
+		sprintf(txbuf, "DIST%02d\nTEMP%.2lf\n", distance_data, temperature_data);
+		
+		/* Send data read from file to client */
+		int sent_bytes = send(l_fnp->f_client_fd, txbuf, strlen(txbuf)+1, 0);
+		
+		/* Error in sending */
+		if(sent_bytes == -1)
+		{
+			perror("send failed\n");
+			return;
+		}
+	}
 #else
-    while(1)
-    {    
-        /* Send data read from file to client */
-        int sent_bytes = send(l_fnp->f_client_fd, txbuf, strlen(txbuf)+1, 0);
-
-        /* Error in sending */
-        if(sent_bytes == -1)
-        {
-            perror("send failed\n");
-            return;
-        }
-        sleep(1);
-    }
+	while(1)
+	{    
+		/* Send data read from file to client */
+		int sent_bytes = send(l_fnp->f_client_fd, txbuf, strlen(txbuf)+1, 0);
+		
+		/* Error in sending */
+		if(sent_bytes == -1)
+		{
+			perror("send failed\n");
+			return;
+		}
+		
+		sleep(1);
+	}
 #endif
 
 } // TxRxThread end
@@ -123,14 +124,22 @@ int main(int argc, char* argv[])
 	struct sockaddr_in clientsockaddr;
 	socklen_t addrsize = sizeof(struct sockaddr);
 	int opt = 1;
-	int startdaemon = 0;
-	pid_t pid;
 	int client_fd; 
-    struct fnparam f_param;
+    	struct fnparam f_param;
+	char IP[20] = {0};
 
 	memset(&hints, 0, sizeof(hints));
 
 	openlog(NULL, 0, LOG_USER);
+
+	if(argc != 2)
+	{
+		printf("usage socketserver [IP]\n");	
+		return -1;
+	}
+
+	memcpy(IP, argv[1], strlen(argv[1]));
+	printf("Server's IP address: %s\n",IP);
 
 	/* Setting up signal handlers SIGINT and SIGTERM */
 	if(signal(SIGINT, sighandler) == SIG_ERR)
@@ -145,14 +154,6 @@ int main(int argc, char* argv[])
 		return -1;
 	}
 
-	if(argc == 2)
-	{
-		if(strcmp("-d", argv[1]) == 0)
-		{
-			startdaemon = 1;
-		}	
-	}
-
   	/* Create socket endpoint */ 
 	socket_fd = socket(PF_INET, SOCK_STREAM, 0);
 	
@@ -165,9 +166,9 @@ int main(int argc, char* argv[])
 
 	 /* Forcefully attaching socket to the port 9000 for bind error: address in use */
     	if (setsockopt(socket_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &opt, sizeof(opt)))
-    {
-        perror("setsockopt");
-	   goto cleanexit;    
+	{
+        	perror("setsockopt");
+		goto cleanexit;    
 	}
 
 	/* Setting this for use with getaddrinfo for bind() */
@@ -175,7 +176,7 @@ int main(int argc, char* argv[])
 	hints.ai_socktype = SOCK_STREAM;
 	hints.ai_flags =  AI_NUMERICHOST;
 
-	int rc = getaddrinfo("10.0.0.247", PORT, &hints, &sockaddrinfo);
+	int rc = getaddrinfo(IP, PORT, &hints, &sockaddrinfo);
 	/* Error occurred in getaddrinfo, return -1 on error */
 	if(rc != 0)
 	{
@@ -206,33 +207,13 @@ int main(int argc, char* argv[])
 		goto cleanexit;
 	}
 
-	if(startdaemon)
-	{
-		pid = fork();
-		if(pid == -1)
-			goto cleanexit;
-
-		else if(pid != 0)
-			exit(0);
-
-		if(setsid() == -1)
-			goto cleanexit;
-
-		if(chdir("/") == -1)
-			goto cleanexit;
-
-		open("/dev/null", O_RDWR);
-		dup(0);
-		dup(0);
-
-	}
 #ifdef MQ
-   mq_receive_desc = mq_open("/sendmq", O_RDWR, S_IRWXU, &sendmq);
-  if(mq_receive_desc < 0)
-  {
-    perror("Reciever MQ failed");
-    exit(-1);
-  } 
+	mq_receive_desc = mq_open("/sendmq", O_RDWR, S_IRWXU, &sendmq);
+	if(mq_receive_desc < 0)
+	{
+		perror("Reciever MQ failed");
+		exit(-1);
+	} 
 #endif
 	while(!quitpgm)
 	{		
@@ -257,16 +238,16 @@ int main(int argc, char* argv[])
 
 		f_param.f_client_fd = client_fd;
 		strcpy(f_param.f_IP, IP);
-
-        TxRxData(&f_param);
+		
+		TxRxData(&f_param);
 	}
 
 cleanexit:
 
-    syslog(LOG_DEBUG, "Caught signal, exiting\n");
+    	syslog(LOG_DEBUG, "Caught signal, exiting\n");
 	close(client_fd);
 	close(socket_fd);
-    syslog(LOG_DEBUG, "Closed connection from %s\n", f_param.f_IP);
+    	syslog(LOG_DEBUG, "Closed connection from %s\n", f_param.f_IP);
 
 	return 0;
 
