@@ -8,5 +8,4 @@ Click [here](https://github.com/cu-ecen-aeld/final-project-DhruvHMehta/wiki/Fina
 Click [here](https://github.com/cu-ecen-aeld/final-project-DhruvHMehta/wiki/Dhruv-Mehta's-Final-Project-Video) for Dhruv Mehta's Project Demo Page
 Click [here](https://github.com/cu-ecen-aeld/final-project-Rishab-Shah/wiki/Rishab's-final-Project-video) for Rishab Shah's Project Demo Page
 # Team Members
-Dhruv Mehta (dhruv.mehta@colorado.edu)
-Rishab Shah (rishab.shah@colorado.edu)
+Dhruv Mehta (dhruv.mehta@colorado.edu)  <br>Rishab Shah (rishab.shah@colorado.edu)
